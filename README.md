@@ -6,11 +6,11 @@ A Streamlit application that generates area-proportional charts within a custom 
 
 *   **Pixel-Exactness**: The number of pixels assigned to each category corresponds exactly to the target percentage.
 *   **Custom Shapes**:
-    *   **Presets**: Use the default RS mask, or select shapes from the **Brazil** and **States** datasets (vector based).
+    *   **Presets**: Select shapes from the **Brazil** and **States** datasets (vector based).
     *   **Upload**: Upload your own PNG mask.
 *   **Segmentation Modes**: Vertical, Horizontal, Angular, and Contiguous Wedge.
 *   **High-Resolution Rendering**: Support for upscaling (High DPI) and PDF export.
-*   **Robust Input**: CSV import, mask validation, and auto-detection from shapes.
+*   **Robust Input**: Mask validation and auto-detection from shapes.
 
 ## Structure
 
@@ -19,7 +19,7 @@ A Streamlit application that generates area-proportional charts within a custom 
     *   `mask_utils.py`: Mask loading and processing utilities (supports WKT).
     *   `segmentation.py`: Pixel assignment logic.
     *   `render.py`: Visualization and export logic.
-*   `assets/`: Default assets (masks and CSV shapefiles).
+*   `assets/`: Default assets (CSV shapefiles).
 *   `tests/`: Automated tests for math and logic verification.
 
 ## Setup
@@ -37,12 +37,10 @@ A Streamlit application that generates area-proportional charts within a custom 
 ## Usage
 
 1.  **Select Shape**:
-    *   **Preset: RS (Default)**: Uses the raster mask.
     *   **Preset: Brazil / States**: Uses vector shapes (WKT). Select "Brazil" for country or "States" for specific UF.
     *   **Upload**: Upload a PNG.
 2.  **Input Data**:
     *   Manually enter labels and values in the sidebar/expander.
-    *   Or upload a CSV with columns: `label`, `value`, `color` (optional).
 3.  **Configure**:
     *   Choose segmentation mode (Vertical, Horizontal, Angular, Contiguous Wedge).
     *   Adjust margins, fonts, and resolution.

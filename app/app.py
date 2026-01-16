@@ -11,7 +11,6 @@ from PIL import Image
 
 # Local imports
 from mask_utils import (
-    load_default_rs_mask_from_repo,
     load_mask_from_alpha_image,
     extract_mask_from_shape_image,
     load_mask_from_wkt_string,
@@ -26,7 +25,6 @@ from render import render_shape_area_chart
 APP_DIR = Path(__file__).resolve().parent
 REPO_DIR = APP_DIR.parent
 ASSETS_DIR = REPO_DIR / "assets"
-DEFAULT_RS_MASK_PATH = ASSETS_DIR / "rs_mask.png"
 BRASIL_CSV_PATH = ASSETS_DIR / "br_geobr_mapas_pais.csv"
 STATES_CSV_PATH = ASSETS_DIR / "br_geobr_mapas_uf.csv"
 
@@ -78,10 +76,9 @@ st.markdown(
 with st.sidebar:
     st.header("1. Shape")
 
-    source_options = ["Preset: RS (Default)", "Upload"]
+    source_options = ["Upload"]
     if HAS_SHAPELY:
-        # Insert after RS
-        source_options.insert(1, "Preset: Brazil / States")
+        source_options.insert(0, "Preset: Brazil / States")
 
     shape_source = st.radio(
         "Source",
@@ -162,24 +159,9 @@ with st.sidebar:
 
 # Load Mask
 try:
-    if shape_source == "Preset: RS (Default)":
-        mask = load_default_rs_mask_from_repo(DEFAULT_RS_MASK_PATH)
-    elif shape_source == "Preset: Brazil / States":
+    if shape_source == "Preset: Brazil / States":
         if selected_wkt:
-            # We use max_side from sidebar (defined later).
-            # But we need it now.
-            # We can grab it from session state or default?
-            # Or render it later?
-            # Actually, `mask` is needed before UI loop continues?
-            # No, `mask` is used for preview and then render.
-            # Sidebar is already rendered.
-            # `max_side` is defined inside `with st.expander` later.
-            # We should move max_side config UP or use a default here and resize later.
-            # load_mask_from_wkt_string takes max_side.
-            # Let's use a temporary high res default (e.g. 2000) and then `resize_mask_bool` will downscale it if needed.
-            # Actually, better to define max_side earlier?
-            # But it's in a collapsed expander.
-            # Let's peek into the expander or just use 2000.
+            # Use high res for parsing, resize later
             mask = load_mask_from_wkt_string(selected_wkt, max_side=2000)
         else:
             st.info("Please select a preset.")
@@ -221,40 +203,6 @@ with c_actions:
     if st.button("Reset Defaults"):
         reset_defaults()
         st.rerun()
-
-    # CSV Upload
-    csv_file = st.file_uploader("Import CSV", type=["csv"], help="Columns: label, value, color(optional)")
-    if csv_file:
-        try:
-            df = pd.read_csv(csv_file)
-            # Normalize columns
-            df.columns = [c.lower().strip() for c in df.columns]
-            if "label" in df.columns and "value" in df.columns:
-                st.session_state["labels"] = df["label"].astype(str).tolist()
-                st.session_state["values"] = df["value"].astype(float).tolist()
-                st.session_state["n_vars"] = len(df)
-
-                # Colors
-                if "color" in df.columns:
-                     st.session_state["colors"] = df["color"].astype(str).tolist()
-                else:
-                    # Generate colors if needed
-                    default_palette = [
-                        "#6AA84C", "#F2C329", "#3C78D8", "#E06666", "#8E7CC3",
-                        "#76A5AF", "#C27BA0", "#93C47D", "#FFD966", "#A4C2F4",
-                    ]
-                    current_len = len(st.session_state["colors"])
-                    req_len = len(df)
-                    if req_len > current_len:
-                        st.session_state["colors"] += [default_palette[i % len(default_palette)] for i in range(current_len, req_len)]
-                    else:
-                        st.session_state["colors"] = st.session_state["colors"][:req_len]
-                st.success("CSV Imported!")
-                st.rerun()
-            else:
-                st.error("CSV must have 'label' and 'value' columns.")
-        except Exception as e:
-            st.error(f"Failed to read CSV: {e}")
 
 with c_data:
     n = st.number_input("Number of Variables", min_value=2, max_value=50, value=st.session_state["n_vars"], step=1)

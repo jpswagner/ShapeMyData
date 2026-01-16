@@ -296,23 +296,6 @@ def extract_mask_from_shape_image(img: Image.Image, sat_thresh: float = 0.20) ->
     rough = (alpha > 0.05) & (s > sat_thresh)
     return largest_connected_component(rough)
 
-def load_default_rs_mask_from_repo(path: Union[str, Path]) -> np.ndarray:
-    p = Path(path)
-    if not p.exists():
-        # Raise a clear error that the UI can catch
-        raise FileNotFoundError(
-            f"Asset not found: {p}\n"
-            "Please ensure the 'assets' directory contains 'rs_mask.png'."
-        )
-    try:
-        img = Image.open(p).convert("RGBA")
-        mask = load_mask_from_alpha_image(img)
-        if not np.any(mask):
-             raise ValueError("The loaded mask is empty (no visible pixels).")
-        return mask
-    except Exception as e:
-        raise ValueError(f"Failed to load or process mask at {p}: {e}")
-
 def load_mask_from_wkt_string(wkt_string: str, max_side: int = 1000) -> np.ndarray:
     """
     Parses a WKT string (Polygon/MultiPolygon), scales it to fit within max_side x max_side,
