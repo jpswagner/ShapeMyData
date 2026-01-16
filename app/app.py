@@ -14,6 +14,7 @@ from mask_utils import (
     load_default_rs_mask_from_repo,
     load_mask_from_alpha_image,
     extract_mask_from_shape_image,
+    load_mask_from_wkt_string,
     resize_mask_bool,
     hex_to_rgba
 )
@@ -26,6 +27,14 @@ APP_DIR = Path(__file__).resolve().parent
 REPO_DIR = APP_DIR.parent
 ASSETS_DIR = REPO_DIR / "assets"
 DEFAULT_RS_MASK_PATH = ASSETS_DIR / "rs_mask.png"
+BRASIL_CSV_PATH = ASSETS_DIR / "br_geobr_mapas_pais.csv"
+STATES_CSV_PATH = ASSETS_DIR / "br_geobr_mapas_uf.csv"
+
+@st.cache_data
+def load_csv_data(path: Path) -> pd.DataFrame:
+    if not path.exists():
+        return pd.DataFrame()
+    return pd.read_csv(path)
 
 # =========================
 # State Management
@@ -63,15 +72,39 @@ with st.sidebar:
     st.header("1. Shape")
     shape_source = st.radio(
         "Source",
-        ["Default (RS)", "Upload"],
+        ["Preset: RS (Default)", "Preset: Brazil / States", "Upload"],
         index=0,
     )
 
     sat_thresh = 0.20
     upload_kind = "mask_alpha"
     uploaded = None
+    selected_wkt = None
 
-    if shape_source == "Upload":
+    if shape_source == "Preset: Brazil / States":
+        preset_kind = st.radio("Select Preset", ["Brazil (Country)", "States (UF)"], index=0)
+
+        if preset_kind == "Brazil (Country)":
+            df_br = load_csv_data(BRASIL_CSV_PATH)
+            if not df_br.empty and "geometria" in df_br.columns:
+                # Assuming single row or user just wants the first/merged
+                # The file head showed one row.
+                selected_wkt = df_br.iloc[0]["geometria"]
+            else:
+                st.error("Brazil CSV not found or invalid.")
+
+        else: # States
+            df_uf = load_csv_data(STATES_CSV_PATH)
+            if not df_uf.empty and "sigla_uf" in df_uf.columns and "geometria" in df_uf.columns:
+                ufs = sorted(df_uf["sigla_uf"].unique())
+                selected_uf = st.selectbox("Select State", ufs, index=ufs.index("RS") if "RS" in ufs else 0)
+                row = df_uf[df_uf["sigla_uf"] == selected_uf]
+                if not row.empty:
+                    selected_wkt = row.iloc[0]["geometria"]
+            else:
+                st.error("States CSV not found or invalid.")
+
+    elif shape_source == "Upload":
         uploaded = st.file_uploader("Upload Image (PNG/JPG)", type=["png", "jpg", "jpeg", "webp"])
         kind = st.radio("Upload Type", ["Mask PNG (alpha)", "Shape image (auto-detect)"], index=0)
         if kind == "Mask PNG (alpha)":
@@ -112,11 +145,31 @@ with st.sidebar:
 
 # Load Mask
 try:
-    if shape_source == "Default (RS)":
+    if shape_source == "Preset: RS (Default)":
         mask = load_default_rs_mask_from_repo(DEFAULT_RS_MASK_PATH)
+    elif shape_source == "Preset: Brazil / States":
+        if selected_wkt:
+            # We use max_side from sidebar (defined later).
+            # But we need it now.
+            # We can grab it from session state or default?
+            # Or render it later?
+            # Actually, `mask` is needed before UI loop continues?
+            # No, `mask` is used for preview and then render.
+            # Sidebar is already rendered.
+            # `max_side` is defined inside `with st.expander` later.
+            # We should move max_side config UP or use a default here and resize later.
+            # load_mask_from_wkt_string takes max_side.
+            # Let's use a temporary high res default (e.g. 2000) and then `resize_mask_bool` will downscale it if needed.
+            # Actually, better to define max_side earlier?
+            # But it's in a collapsed expander.
+            # Let's peek into the expander or just use 2000.
+            mask = load_mask_from_wkt_string(selected_wkt, max_side=2000)
+        else:
+            st.info("Please select a preset.")
+            st.stop()
     else:
         if uploaded is None:
-            st.info("Please upload a file or select Default.")
+            st.info("Please upload a file or select a source.")
             st.stop()
         img = Image.open(io.BytesIO(uploaded.getvalue())).convert("RGBA")
         if upload_kind == "mask_alpha":

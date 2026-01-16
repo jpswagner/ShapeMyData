@@ -2,7 +2,8 @@ import os
 from pathlib import Path
 from typing import List, Tuple, Optional, Union
 import numpy as np
-from PIL import Image, ImageFont
+from PIL import Image, ImageDraw, ImageFont
+from shapely import wkt
 
 # =========================
 # Utilities
@@ -312,3 +313,68 @@ def load_default_rs_mask_from_repo(path: Union[str, Path]) -> np.ndarray:
         return mask
     except Exception as e:
         raise ValueError(f"Failed to load or process mask at {p}: {e}")
+
+def load_mask_from_wkt_string(wkt_string: str, max_side: int = 1000) -> np.ndarray:
+    """
+    Parses a WKT string (Polygon/MultiPolygon), scales it to fit within max_side x max_side,
+    and returns a boolean mask.
+    """
+    try:
+        geom = wkt.loads(wkt_string)
+    except Exception as e:
+        raise ValueError(f"Failed to parse WKT: {e}")
+
+    if geom.is_empty:
+        raise ValueError("Geometry is empty.")
+
+    minx, miny, maxx, maxy = geom.bounds
+    w_geo = maxx - minx
+    h_geo = maxy - miny
+
+    if w_geo == 0 or h_geo == 0:
+        raise ValueError("Geometry has zero width or height.")
+
+    scale = max_side / max(w_geo, h_geo)
+
+    # Target image size
+    img_w = int(np.ceil(w_geo * scale))
+    img_h = int(np.ceil(h_geo * scale))
+
+    # Add a small padding? Or exact fit?
+    # Exact fit is fine.
+
+    # Coordinate transform function:
+    # Image Y is down. Map Y increases up.
+    # pixel_x = (x - minx) * scale
+    # pixel_y = (maxy - y) * scale  <-- Flip Y
+
+    def transform_coords(coords):
+        return [
+            ((x - minx) * scale, (maxy - y) * scale)
+            for x, y in coords
+        ]
+
+    img = Image.new("L", (img_w, img_h), 0)
+    draw = ImageDraw.Draw(img)
+
+    def draw_poly(poly):
+        # Draw exterior
+        ext_coords = transform_coords(poly.exterior.coords)
+        draw.polygon(ext_coords, fill=255)
+        # Draw holes
+        for interior in poly.interiors:
+            int_coords = transform_coords(interior.coords)
+            draw.polygon(int_coords, fill=0)
+
+    if geom.geom_type == 'Polygon':
+        draw_poly(geom)
+    elif geom.geom_type == 'MultiPolygon':
+        for poly in geom.geoms:
+            draw_poly(poly)
+    else:
+        # Fallback (e.g. GeometryCollection containing Polygons?)
+        # For now support Poly/MultiPoly
+        pass
+
+    arr = np.array(img)
+    return arr > 127

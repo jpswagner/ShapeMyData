@@ -5,7 +5,9 @@ A Streamlit application that generates area-proportional charts within a custom 
 ## Features
 
 *   **Pixel-Exactness**: The number of pixels assigned to each category corresponds exactly to the target percentage.
-*   **Custom Shapes**: Use the default map (RS) or upload your own PNG mask.
+*   **Custom Shapes**:
+    *   **Presets**: Use the default RS mask, or select shapes from the **Brazil** and **States** datasets (vector based).
+    *   **Upload**: Upload your own PNG mask.
 *   **Segmentation Modes**: Vertical, Horizontal, Angular, and Contiguous Wedge.
 *   **High-Resolution Rendering**: Support for upscaling (High DPI) and PDF export.
 *   **Robust Input**: CSV import, mask validation, and auto-detection from shapes.
@@ -14,10 +16,10 @@ A Streamlit application that generates area-proportional charts within a custom 
 
 *   `app/`: Application source code.
     *   `app.py`: Main Streamlit entrypoint.
-    *   `mask_utils.py`: Mask loading and processing utilities.
+    *   `mask_utils.py`: Mask loading and processing utilities (supports WKT).
     *   `segmentation.py`: Pixel assignment logic.
     *   `render.py`: Visualization and export logic.
-*   `assets/`: Default assets (masks).
+*   `assets/`: Default assets (masks and CSV shapefiles).
 *   `tests/`: Automated tests for math and logic verification.
 
 ## Setup
@@ -34,9 +36,10 @@ A Streamlit application that generates area-proportional charts within a custom 
 
 ## Usage
 
-1.  **Select Shape**: Use the default Rio Grande do Sul mask or upload a PNG.
-    *   **Mask PNG (Alpha)**: Image where transparent pixels are ignored.
-    *   **Auto-detect**: Image where shape is detected by color saturation.
+1.  **Select Shape**:
+    *   **Preset: RS (Default)**: Uses the raster mask.
+    *   **Preset: Brazil / States**: Uses vector shapes (WKT). Select "Brazil" for country or "States" for specific UF.
+    *   **Upload**: Upload a PNG.
 2.  **Input Data**:
     *   Manually enter labels and values in the sidebar/expander.
     *   Or upload a CSV with columns: `label`, `value`, `color` (optional).
