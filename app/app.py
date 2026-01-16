@@ -30,6 +30,13 @@ DEFAULT_RS_MASK_PATH = ASSETS_DIR / "rs_mask.png"
 BRASIL_CSV_PATH = ASSETS_DIR / "br_geobr_mapas_pais.csv"
 STATES_CSV_PATH = ASSETS_DIR / "br_geobr_mapas_uf.csv"
 
+# Check dependencies
+try:
+    import shapely
+    HAS_SHAPELY = True
+except ImportError:
+    HAS_SHAPELY = False
+
 @st.cache_data
 def load_csv_data(path: Path) -> pd.DataFrame:
     if not path.exists():
@@ -70,11 +77,21 @@ st.markdown(
 # Sidebar
 with st.sidebar:
     st.header("1. Shape")
+
+    source_options = ["Preset: RS (Default)", "Upload"]
+    if HAS_SHAPELY:
+        # Insert after RS
+        source_options.insert(1, "Preset: Brazil / States")
+
     shape_source = st.radio(
         "Source",
-        ["Preset: RS (Default)", "Preset: Brazil / States", "Upload"],
+        source_options,
         index=0,
     )
+
+    if not HAS_SHAPELY and "Brazil" in shape_source:
+        # This shouldn't happen due to logic above, but for safety
+        st.warning("The 'shapely' library is required for Vector Presets. Please install it.")
 
     sat_thresh = 0.20
     upload_kind = "mask_alpha"

@@ -3,7 +3,6 @@ from pathlib import Path
 from typing import List, Tuple, Optional, Union
 import numpy as np
 from PIL import Image, ImageDraw, ImageFont
-from shapely import wkt
 
 # =========================
 # Utilities
@@ -318,7 +317,13 @@ def load_mask_from_wkt_string(wkt_string: str, max_side: int = 1000) -> np.ndarr
     """
     Parses a WKT string (Polygon/MultiPolygon), scales it to fit within max_side x max_side,
     and returns a boolean mask.
+    Requires 'shapely' to be installed.
     """
+    try:
+        from shapely import wkt
+    except ImportError:
+        raise ImportError("The 'shapely' library is required to load WKT masks. Please install it with 'pip install shapely'.")
+
     try:
         geom = wkt.loads(wkt_string)
     except Exception as e:
