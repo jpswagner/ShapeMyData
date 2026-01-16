@@ -63,12 +63,12 @@ if "colors" not in st.session_state:
 # =========================
 # Streamlit UI
 # =========================
-st.set_page_config(page_title="Shape Area Chart", layout="wide")
-st.title("Shape Area Chart (pixel-exact)")
+st.set_page_config(page_title="Map Area Chart", layout="wide")
+st.title("Map Area Chart")
 
 st.markdown(
     """
-    Generate area-proportional charts within a shape with pixel-exact precision.
+    Generate area-proportional charts within a map shape.
     """
 )
 
