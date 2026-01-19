@@ -63,12 +63,31 @@ if "colors" not in st.session_state:
 # =========================
 # Streamlit UI
 # =========================
-st.set_page_config(page_title="Map Area Chart", layout="wide")
-st.title("Map Area Chart")
+st.set_page_config(page_title="ShapeMyData", layout="wide")
+st.title("ShapeMyData")
 
 st.markdown(
     """
-    Generate area-proportional charts within a map shape.
+    ## Welcome to ShapeMyData 👋
+
+This tool lets you turn **any shape** into a **pixel-exact area chart**.  
+Whether it’s a **map**, **logo**, or **icon**, you can segment it **proportionally** based on your data.
+
+---
+
+## Quick Start
+
+### 1) Select a shape
+- Use the **Brazil / States** presets, **or**
+- **Upload** your own image
+
+### 2) Enter data
+- Add your **categories** and **values**
+
+### 3) Customize & download
+- Pick a **segmentation style** (e.g., **Vertical**, **Horizontal**)
+- Download your chart as a **high-resolution PNG or PDF**
+
     """
 )
 
@@ -158,6 +177,27 @@ with st.sidebar:
         margin_bottom = st.slider("Bottom Margin", 20, 400, 60, 5)
 
 # Load Mask
+UPLOAD_INSTRUCTIONS = """
+## Upload
+
+### Image guidelines (best results)
+Use **clean, high-contrast** images with **well-defined borders**.
+
+✅ **Preferred**
+- **Solid black silhouette** on a **white** or **transparent** background
+
+🚫 **Avoid**
+- Gradients
+- Shadows
+- Blurry edges
+- Complex internal details
+
+### Tip (finding templates)
+Search Google Images for:  
+`[name] silhouette png`  
+Example: `france map silhouette png`
+
+"""
 try:
     if shape_source == "Preset: Brazil / States":
         if selected_wkt:
@@ -168,6 +208,8 @@ try:
             st.stop()
     else:
         if uploaded is None:
+            st.markdown(UPLOAD_INSTRUCTIONS)
+            st.image("assets/france_png_ex.png")
             st.info("Please upload a file or select a source.")
             st.stop()
         img = Image.open(io.BytesIO(uploaded.getvalue())).convert("RGBA")
@@ -334,3 +376,12 @@ with st.spinner("Rendering..."):
 
     except Exception as e:
         st.exception(e)
+
+st.markdown("""
+**Use in Research or Publications**
+
+If you use ShapeMyData in a scientific publication, academic project, or report, please cite it using the following format:
+
+Wagner, J. P. S. (2026). ShapeMyData [Computer software]. Available at https://github.com/jpswagner/ShapeMyData
+
+Citation is appreciated as it helps support the continued development of this tool.""")
